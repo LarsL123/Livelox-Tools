@@ -4,8 +4,42 @@ const config = require("../config");
 const logger = require("../logger");
 
 //EventLink should be of the type: "https://www.livelox.com/Viewer/Lovspretten/H-50-?classId=1189719&live=false&tab=player" so same as when fetching the links.
-async function fetchAndSaveClassInfo(classId, eventLink) {
-  const response = await fetch("https://www.livelox.com/Data/ClassInfo", {
+async function fetchAndSaveClassInfo(classID, eventLink) {
+  try {
+    const response = await fetchClassInfo(classID, eventLink);
+
+    if (!response.ok)
+      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+
+    const data = await response.json();
+
+    fs.writeFileSync(
+      getJSONPath(classID),
+      JSON.stringify(data, null, 2),
+      "utf8",
+    );
+  } catch (err) {
+    logger.error("Was not able to get ClassInfo: ", err);
+    throw err;
+  }
+}
+
+function extractClassStoreageURL(classID) {
+  try {
+    const jsonString = fs.readFileSync(getJSONPath(classID), "utf8");
+    const data = JSON.parse(jsonString);
+    return data["general"]["classBlobUrl"];
+  } catch (err) {
+    logger.error(
+      "Was not able to read ClassStorageURL from file: ",
+      getJSONPath(classID),
+    );
+    throw err;
+  }
+}
+
+function fetchClassInfo(classID, eventLink) {
+  return fetch("https://www.livelox.com/Data/ClassInfo", {
     headers: {
       accept: "application/json, text/javascript, */*; q=0.01",
       "accept-language":
@@ -27,43 +61,17 @@ async function fetchAndSaveClassInfo(classId, eventLink) {
     },
     body: JSON.stringify({
       eventId: null,
-      classIds: [classId],
+      classIds: [classID],
       courseIds: [],
       relayLegs: [],
       relayLegGroupIds: [],
     }),
     method: "POST",
   });
-
-  if (!response.ok) {
-    throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
-  }
-
-  const data = await response.json();
-
-  fs.writeFileSync(getJSONPath(classId), JSON.stringify(data, null, 2), "utf8");
 }
 
-function extractClassStoreageURL(classId) {
-  try {
-    const jsonString = fs.readFileSync(getJSONPath(classId), "utf8");
-    const data = JSON.parse(jsonString);
-    return data["general"]["classBlobUrl"];
-  } catch (error) {
-    logger.error(
-      "Was not able to read ClassStorageURL from file: ",
-      getJSONPath(classId),
-    );
-    throw error;
-  }
-}
-
-function getJSONPath(classId) {
-  return path.join(getPath(classId), "ClassInfo.json");
-}
-
-function getPath(classId) {
-  return path.join(config.LIVELOX_DIR, String(classId), "jsonDataLL");
+function getJSONPath(classID) {
+  return path.join(config.JSON_FOLDER(classID), "ClassInfo.json");
 }
 
 module.exports = { fetchAndSaveClassInfo, extractClassStoreageURL };

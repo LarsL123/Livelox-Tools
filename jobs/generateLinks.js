@@ -1,7 +1,8 @@
 const fs = require("fs");
 const path = require("path");
+const config = require("../config");
 
-const folderPath = "./collectLinks/downloadedPages";
+const folderPath = path.join(config.DATA_DIR, "downloadedPages");
 const files = fs.readdirSync(folderPath);
 
 const links = [];

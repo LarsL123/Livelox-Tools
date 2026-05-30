@@ -1,10 +1,7 @@
-import { error } from "console";
-import logger from "../logger";
-import { upgrade } from "undici-types";
-
 const fs = require("fs");
 const path = require("path");
 const config = require("../config");
+const logger = require("../logger");
 
 const {
   fetchAndSaveClassInfo,
@@ -14,54 +11,56 @@ const { fetchAndSaveMapData } = require("../fetchers/classStorageFetcher");
 
 //TODO: Loop here over all the links.
 
-async function downloadJSON(classId, eventURI) {
+downloadJSON(
+  1089654,
+  //"https://www.livelox.com/Viewer/GR26-bonus-Diamond-Calar-Alto-Almeria-/GR26-bonus?classId=1091602",
+
+  "//www.livelox.com/Viewer/GR26-03-Interval-6x1k-(unforked)---Las-Mimbres/GR26-03-livelox?classId=1089654&live=false&tab=player",
+);
+
+async function downloadJSON(classID, eventURI) {
   try {
-    if (eventExists(classId)) {
+    if (eventExists(classID))
+      return logger.log("Event allready excists: Skipping");
+
+    makeDirectory(classID);
+
+    await fetchAndSaveClassInfo(classID, eventURI);
+    const classStorageURL = extractClassStoreageURL(classID);
+    if (classStorageURL === undefined) {
+      logger.warn(classID, " is probably passwordprotected. Cannot download.");
+      createStatusFile(classID, "PASSWORD");
       return;
     }
-
-    makeDirectory(classId);
-
-    await fetchAndSaveClassInfo(classId, eventURI);
-    const classStorageURL = extractClassStoreageURL(classId);
-    await fetchAndSaveMapData(classId, classStorageURL);
-    writeStatus(classId);
-    logger.log("Successfully downloaded the JSON files for classID", classId);
-  } catch (Error) {
-    logger.Error(
+    await fetchAndSaveMapData(classID, classStorageURL);
+    createStatusFile(classID, "Success");
+    logger.log("Successfully downloaded the JSON files for classID", classID);
+  } catch (err) {
+    logger.error(
       "Was not able to downlaod JSON data for classID ",
-      classId,
+      classID,
       " Skipping...",
     );
-    logger.Error(error);
+    logger.error(err);
   }
 }
 
-function eventExists(classId) {
-  return fs.existsSync(folderPath(classId));
+function eventExists(classID) {
+  return fs.existsSync(config.JSON_FOLDER(classID));
 }
 
 function makeDirectory(classID) {
-  fs.mkdirSync(folderPath, { recursive: true });
+  fs.mkdirSync(config.JSON_FOLDER(classID), { recursive: true });
 }
 
-function folderPath(classID) {
-  return path.join(config.LIVELOX_DIR, String(classId));
-}
-
-function writeStatus(classID) {
-  const status = { jsonDownload: "True" };
+function createStatusFile(classID, statusStr) {
+  const status = { jsonDownload: statusStr };
 
   fs.writeFileSync(
-    folderPath(classID),
+    path.join(config.CLASS_FOLDER(classID), "completedJobs.json"),
     JSON.stringify(status, null, 2),
     "utf8",
   );
 }
 
-export default downloadJSON;
-
-// downloadJSON(
-//   1089654,
-//   "//www.livelox.com/Viewer/GR26-03-Interval-6x1k-(unforked)---Las-Mimbres/GR26-03-livelox?classId=1089654&live=false&tab=player",
-// );
+module.exports = downloadJSON;

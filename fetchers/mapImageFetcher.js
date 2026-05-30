@@ -14,7 +14,7 @@ async function downloadMaps(classId, selectedParticipant) {
     selectedParticipant,
   );
 
-  const liveloxDir = path.join(config.LIVELOX_DIR, classId, "exportedMaps");
+  const liveloxDir = path.join(config.DATA_DIR, classId, "exportedMaps");
 
   const fileRouteName = `${classId}.route.jpg`;
   const fileBlankName = `${classId}.blank.jpg`;
