@@ -37,11 +37,11 @@ for (const file of files) {
 
     const link = buildLink(session.participants[0]);
     const date = session.timeInterval.start;
+    const participantId = session.participants[0].id;
 
-    links.push({ date: date, link: link });
+    links.push({ date: date, link: link, participantId: participantId });
   }
 }
-
 // Sort oldest → newest
 links.sort((a, b) => new Date(a.date) - new Date(b.date));
 

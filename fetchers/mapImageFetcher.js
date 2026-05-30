@@ -5,7 +5,7 @@ const logger = require("../logger");
 
 //"https://www.livelox.com/Viewer/Lovspretten/H-21?classId=1189727&live=false&tab=player&selectedParticipantId=4618182"
 
-async function downloadMaps(classId, selectedParticipantId) {
+async function fetchAndSaveMaps(classId, selectedParticipantId) {
   classId = String(classId);
   selectedParticipantId = String(selectedParticipantId);
 
@@ -14,13 +14,17 @@ async function downloadMaps(classId, selectedParticipantId) {
     selectedParticipantId,
   );
 
-  const liveloxDir = path.join(config.DATA_DIR, classId, "exportedMaps");
+  const imageDir = path.join(config.CLASS_FOLDER(classId), "exportedMaps");
 
   const fileRouteName = `${classId}.route.jpg`;
   const fileBlankName = `${classId}.blank.jpg`;
 
-  const fileRoutePath = path.join(liveloxDir, fileRouteName);
-  const fileBlankPath = path.join(liveloxDir, fileBlankName);
+  const fileRoutePath = path.join(imageDir, fileRouteName);
+  const fileBlankPath = path.join(imageDir, fileBlankName);
+
+  if (!fs.existsSync(imageDir)) {
+    fs.mkdirSync(imageDir);
+  }
 
   try {
     await downloadURIImage(routeImageURI, fileRoutePath);
@@ -48,27 +52,18 @@ function getURLs(classId, selectedParticipant) {
 }
 
 async function downloadURIImage(uri, savePath) {
-  try {
-    const response = await fetch(uri);
+  const response = await fetch(uri);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    if (!fs.existsSync(liveloxDir)) {
-      fs.mkdirSync(liveloxDir, { recursive: true });
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    fs.writeFileSync(savePath, buffer);
-
-    logger.log(`Image downloaded successfully to: ${savePath}`);
-  } catch (error) {
-    // console.log(error);
-    logger.error("Was not able to download Images:", error);
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
   }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  fs.writeFileSync(savePath, buffer);
+
+  logger.log(`Image downloaded successfully to: ${savePath}`);
 }
 
-module.exports = { downloadMaps };
+module.exports = { fetchAndSaveMaps };

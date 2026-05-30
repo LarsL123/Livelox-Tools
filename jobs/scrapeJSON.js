@@ -13,10 +13,9 @@ const { createStatusFile } = require("../services/jsonService");
 //TODO: Loop here over all the links.
 
 downloadJSON(
-  1089654,
+  1189371,
   //"https://www.livelox.com/Viewer/GR26-bonus-Diamond-Calar-Alto-Almeria-/GR26-bonus?classId=1091602",
-
-  "//www.livelox.com/Viewer/GR26-03-Interval-6x1k-(unforked)---Las-Mimbres/GR26-03-livelox?classId=1089654&live=false&tab=player",
+  "https://www.livelox.com/Viewer/Elgdilten/H-21?classId=1189371&live=false&tab=player",
 );
 
 async function downloadJSON(classID, eventURI) {
@@ -31,7 +30,7 @@ async function downloadJSON(classID, eventURI) {
     if (!linkExcists(classID, eventURI)) return;
 
     await fetchAndSaveMapData(classID, classStorageURL);
-    createStatusFile(classID, "Success");
+    createStatusFile(classID, "SUCCESS");
     logger.log("Successfully downloaded the JSON files for classID", classID);
   } catch (err) {
     logger.error(
