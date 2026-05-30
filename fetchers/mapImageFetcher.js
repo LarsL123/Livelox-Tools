@@ -5,13 +5,13 @@ const logger = require("../logger");
 
 //"https://www.livelox.com/Viewer/Lovspretten/H-21?classId=1189727&live=false&tab=player&selectedParticipantId=4618182"
 
-async function downloadMaps(classId, selectedParticipant) {
+async function downloadMaps(classId, selectedParticipantId) {
   classId = String(classId);
-  selectedParticipant = String(selectedParticipant);
+  selectedParticipantId = String(selectedParticipantId);
 
   const { blankImageURI, routeImageURI } = getURLs(
     classId,
-    selectedParticipant,
+    selectedParticipantId,
   );
 
   const liveloxDir = path.join(config.DATA_DIR, classId, "exportedMaps");

@@ -3,6 +3,8 @@ const path = require("path");
 const config = require("../config");
 const logger = require("../logger");
 
+const { saveJson, loadJson } = require("../services/jsonService");
+
 //EventLink should be of the type: "https://www.livelox.com/Viewer/Lovspretten/H-50-?classId=1189719&live=false&tab=player" so same as when fetching the links.
 async function fetchAndSaveClassInfo(classID, eventLink) {
   try {
@@ -12,12 +14,7 @@ async function fetchAndSaveClassInfo(classID, eventLink) {
       throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
 
     const data = await response.json();
-
-    fs.writeFileSync(
-      getJSONPath(classID),
-      JSON.stringify(data, null, 2),
-      "utf8",
-    );
+    saveJson(getClassInfoPath(classID), data);
   } catch (err) {
     logger.error("Was not able to get ClassInfo: ", err);
     throw err;
@@ -26,13 +23,12 @@ async function fetchAndSaveClassInfo(classID, eventLink) {
 
 function extractClassStoreageURL(classID) {
   try {
-    const jsonString = fs.readFileSync(getJSONPath(classID), "utf8");
-    const data = JSON.parse(jsonString);
+    const data = loadJson(getClassInfoPath(classID));
     return data["general"]["classBlobUrl"];
   } catch (err) {
     logger.error(
       "Was not able to read ClassStorageURL from file: ",
-      getJSONPath(classID),
+      getClassInfoPath(classID),
     );
     throw err;
   }
@@ -70,7 +66,7 @@ function fetchClassInfo(classID, eventLink) {
   });
 }
 
-function getJSONPath(classID) {
+function getClassInfoPath(classID) {
   return path.join(config.JSON_FOLDER(classID), "ClassInfo.json");
 }
 

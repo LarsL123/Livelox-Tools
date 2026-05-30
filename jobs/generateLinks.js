@@ -1,10 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const config = require("../config");
+const logger = require("../logger");
 
-const folderPath = path.join(config.DATA_DIR, "downloadedPages");
+const folderPath = path.join(config.DATA_DIR, "rawLinkData");
 const files = fs.readdirSync(folderPath);
-
 const links = [];
 
 for (const file of files) {
@@ -16,25 +16,23 @@ for (const file of files) {
   try {
     data = JSON.parse(fs.readFileSync(filePath, "utf8"));
   } catch (err) {
-    console.error(`Failed to parse ${file}:`, err.message);
+    logger.error(`Failed to parse ${file}:`, err.message);
     continue;
   }
 
   if (!data.response || !data.response.sessions) {
-    console.error(`No sessions in ${file}`);
+    logger.error(`No sessions in ${file}`);
     continue;
   }
 
   for (const session of data.response.sessions) {
     if (session.participants === undefined) {
-      console.log("Session not connected to a livelox event.");
       continue;
     }
 
     if (session.participants.length > 1) {
-      console.error("UNKNOWN ERROR CHECK");
-      console.error(session);
-      continue;
+      logger.error("UNKNOWN ERROR CHECK, Double enaty??");
+      logger.error(session);
     }
 
     const link = buildLink(session.participants[0]);
@@ -47,10 +45,8 @@ for (const file of files) {
 // Sort oldest → newest
 links.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-dataDir = path.join("");
-
-fs.writeFileSync("links.json", JSON.stringify(links, null, 2), "utf8");
-console.log(links);
+const outputPath = path.join(config.DATA_DIR, "links.json");
+fs.writeFileSync(outputPath, JSON.stringify(links, null, 2), "utf8");
 
 function buildLink(eventInfo) {
   const eventName = linkify(eventInfo.eventName);
@@ -67,7 +63,10 @@ function buildLink(eventInfo) {
   );
 }
 
-//Actually dont think this is needed. It eats the link anyways.
 function linkify(str) {
-  return str.replaceAll(" ", "-").replaceAll("ø", "o").replaceAll("å", "a");
+  return str
+    .replaceAll(" ", "-")
+    .replaceAll("#", "")
+    .replaceAll("ø", "o") //Do i need this the two last??
+    .replaceAll("å", "a");
 }

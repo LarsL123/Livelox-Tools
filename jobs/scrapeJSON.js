@@ -8,6 +8,7 @@ const {
   extractClassStoreageURL,
 } = require("../fetchers/classInfoFetcher");
 const { fetchAndSaveMapData } = require("../fetchers/classStorageFetcher");
+const { createStatusFile } = require("../services/jsonService");
 
 //TODO: Loop here over all the links.
 
@@ -22,16 +23,13 @@ async function downloadJSON(classID, eventURI) {
   try {
     if (eventExists(classID))
       return logger.log("Event allready excists: Skipping");
-
     makeDirectory(classID);
 
     await fetchAndSaveClassInfo(classID, eventURI);
+
     const classStorageURL = extractClassStoreageURL(classID);
-    if (classStorageURL === undefined) {
-      logger.warn(classID, " is probably passwordprotected. Cannot download.");
-      createStatusFile(classID, "PASSWORD");
-      return;
-    }
+    if (!linkExcists(classID, eventURI)) return;
+
     await fetchAndSaveMapData(classID, classStorageURL);
     createStatusFile(classID, "Success");
     logger.log("Successfully downloaded the JSON files for classID", classID);
@@ -53,14 +51,13 @@ function makeDirectory(classID) {
   fs.mkdirSync(config.JSON_FOLDER(classID), { recursive: true });
 }
 
-function createStatusFile(classID, statusStr) {
-  const status = { jsonDownload: statusStr };
-
-  fs.writeFileSync(
-    path.join(config.CLASS_FOLDER(classID), "completedJobs.json"),
-    JSON.stringify(status, null, 2),
-    "utf8",
-  );
+function linkExcists(classID, classStorageURL) {
+  if (classStorageURL === undefined) {
+    logger.warn(classID, " is probably passwordprotected. Cannot download.");
+    createStatusFile(classID, "PASSWORD");
+    return false;
+  }
+  return true;
 }
 
 module.exports = downloadJSON;

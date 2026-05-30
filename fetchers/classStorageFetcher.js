@@ -2,21 +2,20 @@ const fs = require("fs");
 const path = require("path");
 const config = require("../config");
 
-//classStorage should be of the type: "https://livelox.blob.core.windows.net/class-storage/0001189719_3988880102436"
+const { saveJson } = require("../services/jsonService");
+
+/*
+  classId: Integer
+  classStorageURL example: "https://livelox.blob.core.windows.net/class-storage/0001189719_3988880102436"
+*/
 async function fetchAndSaveMapData(classId, classStorageURL) {
   try {
     const response = await fetchClassStorage(classStorageURL);
-
     if (!response.ok)
       throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
 
     const data = await response.json();
-
-    fs.writeFileSync(
-      getJSONPath(classId),
-      JSON.stringify(data, null, 2),
-      "utf8",
-    );
+    saveJson(getMapDataPath(classId), data);
   } catch (error) {
     console.error("Failed to get mapData: ", error.message);
     throw error;
@@ -28,7 +27,7 @@ async function fetchAndSaveMapData(classId, classStorageURL) {
 //   ".",
 // );
 
-function getJSONPath(classID) {
+function getMapDataPath(classID) {
   return path.join(config.JSON_FOLDER(classID), "MapData.json");
 }
 
